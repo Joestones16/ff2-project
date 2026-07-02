@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>All Cases - Land Dispute System</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#2c3e50">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', sans-serif; background: #f4f7f6; }
+        header { background: #2c3e50; color: white; padding: 1rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; }
+        .header-right { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+        .header-right a { color: white; text-decoration: none; font-size: 0.9rem; padding: 5px 10px; border-radius: 4px; }
+        .logout-btn { background: #e74c3c; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; font-weight: bold; min-height: 40px; }
+        main { padding: 1rem; max-width: 1200px; margin: 0 auto; }
+        .card { background: white; padding: 1.5rem; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 1.5rem; }
+        .card h2 { color: #2c3e50; border-bottom: 2px solid #eee; padding-bottom: 0.5rem; margin-bottom: 1rem; font-size: 1.3rem; }
+        #map { height: 400px; border-radius: 8px; border: 2px solid #ddd; }
+        .table-wrapper { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; min-width: 700px; }
+        th, td { padding: 10px; text-align: left; border-bottom: 1px solid #eee; font-size: 0.9rem; }
+        th { background: #f8f9fa; color: #2c3e50; font-weight: 600; }
+        .status-pending { color: #f1c40f; font-weight: bold; }
+        .status-progress { color: #3498db; font-weight: bold; }
+        .status-resolved { color: #2ecc71; font-weight: bold; }
+
+        @media screen and (max-width: 768px) {
+            header { flex-direction: column; text-align: center; }
+            .header-right { justify-content: center; margin-top: 1rem; }
+            #map { height: 300px; }
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1 style="font-size: 1.2rem;">🏛️ Land Dispute System</h1>
+    <div class="header-right">
+        <span id="welcomeUser">Welcome</span>
+        <a href="land_dispute.html">📝 Submit</a>
+        <a href="dashboard.html">📊 Dashboard</a>
+        <a href="all_cases.html">📋 Cases</a>
+        <button class="logout-btn" onclick="logout()">Logout</button>
+    </div>
+</header>
+
+<main>
+    <section class="card">
+        <h2>🗺️ All Cases on the Map</h2>
+        <p style="color:#7f8c8d; font-size:0.85rem; margin-bottom: 1rem;">Click pins to see case details</p>
+        <div id="map"></div>
+    </section>
+
+    <section class="card">
+        <h2>📋 Case Records</h2>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr><th>Case ID</th><th>Title</th><th>Type</th><th>Status</th><th>Reporter</th><th>Date</th><th>Docs</th></tr>
+                </thead>
+                <tbody id="casesBody">
+                    <tr><td colspan="7" style="text-align:center;">Loading...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+</main>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+    const session = localStorage.getItem('userSession');
+    if (!session) { window.location.href = 'login.html'; }
+    else {
+        const user = JSON.parse(session);
+        document.getElementById('welcomeUser').innerText = `Welcome, ${user.name}`;
+    }
+
+    const map = L.map('map').setView([9.0320, 38.7469], 6);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap'
+    }).addTo(map);
+
+    async function loadCases() {
+        try {
+            const response = await fetch('/api/cases');
+            const cases = await response.json();
+            
+            const tbody = document.getElementById('casesBody');
+            tbody.innerHTML = '';
+            
+            if (cases.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">No cases yet</td></tr>';
+                return;
+            }
+
+            const bounds = [];
+            cases.forEach(c => {
+                if (c.latitude && c.longitude) {
+                    const marker = L.marker([c.latitude, c.longitude]).addTo(map);
+                    marker.bindPopup(`
+                        <b>${c.case_id}</b><br>
+                        <b>${c.title}</b><br>
+                        Type: ${c.dispute_type}<br>
+                        Status: ${c.status}<br>
+                        Reporter: ${c.reporter_name}
+                    `);
+                    bounds.push([c.latitude, c.longitude]);
+                }
+                
+                const statusClass = c.status === 'Pending' ? 'status-pending' : c.status === 'In Progress' ? 'status-progress' : 'status-resolved';
+                const docs = c.documents ? c.documents.split(',').map(doc => 
+                    `<a href="/uploads/${doc}" target="_blank" style="color:#3498db; margin-right: 5px;">📎</a>`
+                ).join('') : '-';
+                
+                tbody.innerHTML += `
+                    <tr>
+                        <td><b>${c.case_id}</b></td>
+                        <td>${c.title}</td>
+                        <td>${c.dispute_type}</td>
+                        <td class="${statusClass}">${c.status}</td>
+                        <td>${c.reporter_name}</td>
+                        <td>${c.submitted_date}</td>
+                        <td>${docs}</td>
+                    </tr>
+                `;
+            });
+            
+            if (bounds.length > 0) {
+                map.fitBounds(bounds, { padding: [50, 50] });
+            }
+        } catch (err) {
+            document.getElementById('casesBody').innerHTML = 
+                '<tr><td colspan="7" style="text-align:center; color:red;">Error loading cases</td></tr>';
+        }
+    }
+
+    loadCases();
+
+    function logout() {
+        localStorage.removeItem('userSession');
+        window.location.href = 'login.html';
+    }
+
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('/sw.js');
+    }
+</script>
+</body>
+</html>

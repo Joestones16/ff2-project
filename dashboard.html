@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Dashboard - Land Dispute System</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#2c3e50">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', sans-serif; background: #f4f7f6; }
+        header { background: #2c3e50; color: white; padding: 1rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; }
+        .header-left h1 { font-size: 1.2rem; margin-bottom: 0.2rem; }
+        .header-right { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+        .header-right a { color: white; text-decoration: none; font-size: 0.9rem; padding: 5px 10px; border-radius: 4px; }
+        .logout-btn { background: #e74c3c; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; font-weight: bold; min-height: 40px; }
+        main { padding: 1rem; max-width: 1400px; margin: 0 auto; }
+        .page-title { color: #2c3e50; margin-bottom: 1.5rem; font-size: 1.5rem; }
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
+        .stat-card { background: white; padding: 1.2rem; border-radius: 10px; box-shadow: 0 2px 15px rgba(0,0,0,0.08); border-left: 5px solid #3498db; }
+        .stat-card h3 { font-size: 2rem; color: #2c3e50; margin-bottom: 0.3rem; }
+        .stat-card p { color: #7f8c8d; font-weight: 600; font-size: 0.85rem; text-transform: uppercase; }
+        .stat-card.total { border-left-color: #3498db; }
+        .stat-card.pending { border-left-color: #f1c40f; }
+        .stat-card.progress { border-left-color: #9b59b6; }
+        .stat-card.resolved { border-left-color: #2ecc71; }
+        .charts-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; margin-bottom: 2rem; }
+        .card { background: white; padding: 1.5rem; border-radius: 10px; box-shadow: 0 2px 15px rgba(0,0,0,0.08); }
+        .card h2 { color: #2c3e50; margin-bottom: 1rem; font-size: 1.2rem; border-bottom: 2px solid #ecf0f1; padding-bottom: 0.5rem; }
+        .chart-container { position: relative; height: 250px; }
+        .recent-cases { background: white; padding: 1.5rem; border-radius: 10px; box-shadow: 0 2px 15px rgba(0,0,0,0.08); overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; min-width: 600px; }
+        th, td { padding: 10px; text-align: left; border-bottom: 1px solid #ecf0f1; font-size: 0.9rem; }
+        th { background: #f8f9fa; color: #2c3e50; font-weight: 600; }
+        .status-badge { padding: 4px 10px; border-radius: 12px; font-size: 0.8rem; font-weight: 600; }
+        .status-pending { background: #fff3cd; color: #856404; }
+        .status-progress { background: #d1ecf1; color: #0c5460; }
+        .status-resolved { background: #d4edda; color: #155724; }
+
+        @media screen and (max-width: 768px) {
+            header { flex-direction: column; text-align: center; }
+            .header-right { justify-content: center; margin-top: 1rem; }
+            .stats-grid { grid-template-columns: repeat(2, 1fr); }
+            .stat-card h3 { font-size: 1.5rem; }
+            .charts-grid { grid-template-columns: 1fr; }
+            .chart-container { height: 200px; }
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="header-left"><h1>🏛️ Land Dispute System</h1></div>
+    <div class="header-right">
+        <span id="welcomeUser">Welcome</span>
+        <a href="land_dispute.html">📝 Submit</a>
+        <a href="dashboard.html">📊 Dashboard</a>
+        <a href="all_cases.html">📋 Cases</a>
+        <button class="logout-btn" onclick="logout()">Logout</button>
+    </div>
+</header>
+
+<main>
+    <h1 class="page-title">📊 Management Dashboard</h1>
+    
+    <div class="stats-grid">
+        <div class="stat-card total"><h3 id="totalCases">0</h3><p>Total Cases</p></div>
+        <div class="stat-card pending"><h3 id="pendingCases">0</h3><p>Pending</p></div>
+        <div class="stat-card progress"><h3 id="inProgressCases">0</h3><p>In Progress</p></div>
+        <div class="stat-card resolved"><h3 id="resolvedCases">0</h3><p>Resolved</p></div>
+    </div>
+
+    <div class="charts-grid">
+        <div class="card">
+            <h2>📊 Cases by Type</h2>
+            <div class="chart-container"><canvas id="disputeTypeChart"></canvas></div>
+        </div>
+        <div class="card">
+            <h2>📈 Status Distribution</h2>
+            <div class="chart-container"><canvas id="statusChart"></canvas></div>
+        </div>
+    </div>
+
+    <div class="recent-cases">
+        <h2>🕐 Recent Cases</h2>
+        <table>
+            <thead>
+                <tr><th>Case ID</th><th>Title</th><th>Type</th><th>Status</th><th>Reporter</th><th>Date</th></tr>
+            </thead>
+            <tbody id="recentCasesBody">
+                <tr><td colspan="6" style="text-align:center;">Loading...</td></tr>
+            </tbody>
+        </table>
+    </div>
+</main>
+
+<script>
+    const session = localStorage.getItem('userSession');
+    if (!session) { window.location.href = 'login.html'; }
+    else {
+        const user = JSON.parse(session);
+        document.getElementById('welcomeUser').innerText = `Welcome, ${user.name}`;
+    }
+
+    let disputeTypeChart = null;
+    let statusChart = null;
+
+    async function loadDashboard() {
+        try {
+            const statsResponse = await fetch('/api/stats');
+            const stats = await statsResponse.json();
+            
+            document.getElementById('totalCases').innerText = stats.total || 0;
+            document.getElementById('pendingCases').innerText = stats.pending || 0;
+            document.getElementById('inProgressCases').innerText = stats.inProgress || 0;
+            document.getElementById('resolvedCases').innerText = stats.resolved || 0;
+
+            const casesResponse = await fetch('/api/cases');
+            const cases = await casesResponse.json();
+            
+            updateDisputeTypeChart(cases);
+            updateStatusChart(cases);
+            updateRecentCasesTable(cases.slice(0, 5));
+        } catch (err) {
+            console.error('Error:', err);
+        }
+    }
+
+    function updateDisputeTypeChart(cases) {
+        const typeCounts = {};
+        cases.forEach(c => {
+            const type = c.dispute_type || 'Unknown';
+            typeCounts[type] = (typeCounts[type] || 0) + 1;
+        });
+
+        if (disputeTypeChart) disputeTypeChart.destroy();
+        
+        const ctx = document.getElementById('disputeTypeChart').getContext('2d');
+        disputeTypeChart = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: Object.keys(typeCounts),
+                datasets: [{
+                    data: Object.values(typeCounts),
+                    backgroundColor: ['#3498db', '#e74c3c', '#f1c40f', '#2ecc71', '#9b59b6'],
+                    borderWidth: 2,
+                    borderColor: '#fff'
+                }]
+            },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
+        });
+    }
+
+    function updateStatusChart(cases) {
+        const statusCounts = { 'Pending': 0, 'In Progress': 0, 'Resolved': 0 };
+        cases.forEach(c => {
+            const status = c.status || 'Pending';
+            if (statusCounts.hasOwnProperty(status)) statusCounts[status]++;
+        });
+
+        if (statusChart) statusChart.destroy();
+        
+        const ctx = document.getElementById('statusChart').getContext('2d');
+        statusChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: Object.keys(statusCounts),
+                datasets: [{
+                    label: 'Cases',
+                    data: Object.values(statusCounts),
+                    backgroundColor: ['#f1c40f', '#9b59b6', '#2ecc71'],
+                    borderRadius: 8
+                }]
+            },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
+        });
+    }
+
+    function updateRecentCasesTable(cases) {
+        const tbody = document.getElementById('recentCasesBody');
+        if (cases.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">No cases yet</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = cases.map(c => {
+            const statusClass = c.status === 'Pending' ? 'status-pending' : c.status === 'In Progress' ? 'status-progress' : 'status-resolved';
+            return `<tr>
+                <td><strong>${c.case_id}</strong></td>
+                <td>${c.title}</td>
+                <td>${c.dispute_type}</td>
+                <td><span class="status-badge ${statusClass}">${c.status}</span></td>
+                <td>${c.reporter_name}</td>
+                <td>${c.submitted_date}</td>
+            </tr>`;
+        }).join('');
+    }
+
+    function logout() {
+        localStorage.removeItem('userSession');
+        window.location.href = 'login.html';
+    }
+
+    loadDashboard();
+    setInterval(loadDashboard, 30000);
+
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('/sw.js');
+    }
+</script>
+</body>
+</html>
