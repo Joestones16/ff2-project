@@ -3,45 +3,89 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>All Cases - Land Dispute System</title>
+    <title>Submit Case - Land Dispute System</title>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#2c3e50">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <link rel="apple-touch-icon" href="icon-192.png">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Segoe UI', sans-serif; background: #f4f7f6; }
-        header { background: #2c3e50; color: white; padding: 1rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; }
+        
+        header { 
+            background: #2c3e50; color: white; padding: 1rem; 
+            display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; 
+        }
+        .header-left h1 { font-size: 1.2rem; margin-bottom: 0.2rem; }
         .header-right { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
         .header-right a { color: white; text-decoration: none; font-size: 0.9rem; padding: 5px 10px; border-radius: 4px; }
+        .header-right a:hover { background: rgba(255,255,255,0.1); }
         .logout-btn { background: #e74c3c; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; font-weight: bold; min-height: 40px; }
-        main { padding: 1rem; max-width: 1200px; margin: 0 auto; }
+        
+        main { padding: 1rem; max-width: 900px; margin: 0 auto; }
         .card { background: white; padding: 1.5rem; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 1.5rem; }
         .card h2 { color: #2c3e50; border-bottom: 2px solid #eee; padding-bottom: 0.5rem; margin-bottom: 1rem; font-size: 1.3rem; }
-        #map { height: 400px; border-radius: 8px; border: 2px solid #ddd; }
-        .table-wrapper { overflow-x: auto; }
-        table { width: 100%; border-collapse: collapse; min-width: 700px; }
-        th, td { padding: 10px; text-align: left; border-bottom: 1px solid #eee; font-size: 0.9rem; }
-        th { background: #f8f9fa; color: #2c3e50; font-weight: 600; }
-        .status-pending { color: #f1c40f; font-weight: bold; }
-        .status-progress { color: #3498db; font-weight: bold; }
-        .status-resolved { color: #2ecc71; font-weight: bold; }
+        
+        .form-group { margin-bottom: 1rem; }
+        label { display: block; margin-bottom: 0.5rem; font-weight: 600; color: #555; font-size: 0.95rem; }
+        input, select, textarea { 
+            width: 100%; padding: 0.8rem; border: 1px solid #ddd; border-radius: 5px; font-size: 16px; 
+        }
+        textarea { min-height: 120px; resize: vertical; }
+        
+        .btn-submit { 
+            background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%); color: white; 
+            border: none; padding: 1rem; border-radius: 5px; cursor: pointer; 
+            font-size: 1.1rem; font-weight: bold; width: 100%; min-height: 50px; 
+        }
+        .btn-submit:disabled { background: #95a5a6; cursor: not-allowed; }
+        
+        .btn-location { 
+            background: #3498db; color: white; border: none; padding: 10px 20px; 
+            border-radius: 4px; cursor: pointer; margin-top: 10px; min-height: 44px; width: 100%; 
+        }
+        
+        #map { height: 300px; border-radius: 8px; border: 2px solid #ddd; margin-bottom: 10px; }
+        .coords-display { background: #ecf0f1; padding: 12px; border-radius: 5px; font-family: monospace; color: #2c3e50; font-size: 0.9rem; word-break: break-all; }
+        
+        .success-msg { background: #d4edda; color: #155724; padding: 1rem; border-radius: 5px; margin-bottom: 1rem; display: none; border: 1px solid #c3e6cb; }
+        
+        .file-upload-area {
+            border: 2px dashed #bdc3c7; border-radius: 8px; padding: 2rem 1rem; text-align: center; 
+            cursor: pointer; transition: all 0.3s; background: #f8f9fa;
+        }
+        .file-upload-area:hover { border-color: #3498db; background: #ecf0f1; }
+        .file-upload-icon { font-size: 2.5rem; color: #95a5a6; margin-bottom: 0.5rem; }
+        .file-upload-text { color: #7f8c8d; margin-bottom: 0.5rem; font-size: 0.95rem; }
+        .file-upload-hint { font-size: 0.8rem; color: #95a5a6; }
+        .file-input { display: none; }
+        
+        .file-preview { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 1rem; margin-top: 1rem; }
+        .file-item { position: relative; background: white; border: 1px solid #ddd; border-radius: 8px; padding: 0.5rem; text-align: center; }
+        .file-item img { max-width: 100%; height: 80px; object-fit: cover; border-radius: 4px; }
+        .file-item-icon { font-size: 2rem; color: #3498db; margin: 0.5rem 0; }
+        .file-item-name { font-size: 0.75rem; color: #555; word-break: break-all; margin-top: 0.3rem; }
+        .file-item-remove { position: absolute; top: 3px; right: 3px; background: #e74c3c; color: white; border: none; border-radius: 50%; width: 22px; height: 22px; cursor: pointer; font-size: 0.9rem; line-height: 1; }
 
         @media screen and (max-width: 768px) {
             header { flex-direction: column; text-align: center; }
             .header-right { justify-content: center; margin-top: 1rem; }
-            #map { height: 300px; }
+            .header-left h1 { font-size: 1.1rem; }
+            main { padding: 0.5rem; }
+            .card { padding: 1rem; }
+            .card h2 { font-size: 1.1rem; }
+            #map { height: 250px; }
+            .file-preview { grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); }
         }
     </style>
 </head>
 <body>
 
 <header>
-    <h1 style="font-size: 1.2rem;">🏛️ Land Dispute System</h1>
+    <div class="header-left"><h1>🏛️ Land Dispute System</h1></div>
     <div class="header-right">
-        <span id="welcomeUser">Welcome</span>
-        <a href="land_dispute.html">📝 Submit</a>
+        <span id="welcomeUser" style="font-size: 0.9rem;">Welcome</span>
+        <a href="land_dispute.html"> Submit</a>
         <a href="dashboard.html">📊 Dashboard</a>
         <a href="all_cases.html">📋 Cases</a>
         <button class="logout-btn" onclick="logout()">Logout</button>
@@ -49,29 +93,75 @@
 </header>
 
 <main>
+    <div id="successMsg" class="success-msg"></div>
+
     <section class="card">
-        <h2>🗺️ All Cases on the Map</h2>
-        <p style="color:#7f8c8d; font-size:0.85rem; margin-bottom: 1rem;">Click pins to see case details</p>
+        <h2>📍 Pick Location on the Map</h2>
+        <p style="color:#7f8c8d; font-size:0.85rem; margin-bottom: 1rem;">Click anywhere on the map or use the button below.</p>
         <div id="map"></div>
+        <button type="button" class="btn-location" onclick="getCurrentLocation()">📍 Use My Current Location</button>
+        <div class="coords-display" style="margin-top:10px;">
+            Coordinates: <span id="coordsDisplay">Not set yet — click the map!</span>
+        </div>
+        <input type="hidden" id="latitude">
+        <input type="hidden" id="longitude">
     </section>
 
     <section class="card">
-        <h2>📋 Case Records</h2>
-        <div class="table-wrapper">
-            <table>
-                <thead>
-                    <tr><th>Case ID</th><th>Title</th><th>Type</th><th>Status</th><th>Reporter</th><th>Date</th><th>Docs</th></tr>
-                </thead>
-                <tbody id="casesBody">
-                    <tr><td colspan="7" style="text-align:center;">Loading...</td></tr>
-                </tbody>
-            </table>
-        </div>
+        <h2>📝 Case Details</h2>
+        <form id="caseForm">
+            <div class="form-group">
+                <label>Case Title *</label>
+                <input type="text" id="title" required>
+            </div>
+            <div class="form-group">
+                <label>Dispute Type *</label>
+                <select id="disputeType" required>
+                    <option value="">Select type...</option>
+                    <option>Boundary Dispute</option>
+                    <option>Ownership Dispute</option>
+                    <option>Inheritance Dispute</option>
+                    <option>Land Use Conflict</option>
+                    <option>Tenant-Landlord Dispute</option>
+                    <option>Other</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Parties Involved *</label>
+                <input type="text" id="parties" required>
+            </div>
+            <div class="form-group">
+                <label>Description *</label>
+                <textarea id="description" required></textarea>
+            </div>
+            <div class="form-group">
+                <label>Your Name *</label>
+                <input type="text" id="reporterName" required>
+            </div>
+            <div class="form-group">
+                <label>Contact Info *</label>
+                <input type="text" id="contact" required>
+            </div>
+            
+            <div class="form-group">
+                <label>📎 Supporting Documents</label>
+                <div class="file-upload-area" id="fileUploadArea">
+                    <div class="file-upload-icon">📁</div>
+                    <div class="file-upload-text">Tap to upload or drag files here</div>
+                    <div class="file-upload-hint">Images, PDFs, Documents (Max 10MB each)</div>
+                    <input type="file" id="fileInput" class="file-input" multiple accept="image/*,.pdf,.doc,.docx" capture="environment">
+                </div>
+                <div class="file-preview" id="filePreview"></div>
+            </div>
+            
+            <button type="submit" class="btn-submit" id="submitBtn">Submit Case</button>
+        </form>
     </section>
 </main>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
+    // 1. Security Check
     const session = localStorage.getItem('userSession');
     if (!session) { window.location.href = 'login.html'; }
     else {
@@ -79,74 +169,156 @@
         document.getElementById('welcomeUser').innerText = `Welcome, ${user.name}`;
     }
 
-    const map = L.map('map').setView([9.0320, 38.7469], 6);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '© OpenStreetMap'
-    }).addTo(map);
+    // 2. Map Setup
+    const map = L.map('map').setView([9.0320, 38.7469], 13);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap' }).addTo(map);
+    let marker = null;
 
-    async function loadCases() {
-        try {
-            const response = await fetch('/api/cases');
-            const cases = await response.json();
-            
-            const tbody = document.getElementById('casesBody');
-            tbody.innerHTML = '';
-            
-            if (cases.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">No cases yet</td></tr>';
-                return;
-            }
+    map.on('click', function(e) { placeMarker(e.latlng.lat, e.latlng.lng); });
 
-            const bounds = [];
-            cases.forEach(c => {
-                if (c.latitude && c.longitude) {
-                    const marker = L.marker([c.latitude, c.longitude]).addTo(map);
-                    marker.bindPopup(`
-                        <b>${c.case_id}</b><br>
-                        <b>${c.title}</b><br>
-                        Type: ${c.dispute_type}<br>
-                        Status: ${c.status}<br>
-                        Reporter: ${c.reporter_name}
-                    `);
-                    bounds.push([c.latitude, c.longitude]);
-                }
-                
-                const statusClass = c.status === 'Pending' ? 'status-pending' : c.status === 'In Progress' ? 'status-progress' : 'status-resolved';
-                const docs = c.documents ? c.documents.split(',').map(doc => 
-                    `<a href="/uploads/${doc}" target="_blank" style="color:#3498db; margin-right: 5px;">📎</a>`
-                ).join('') : '-';
-                
-                tbody.innerHTML += `
-                    <tr>
-                        <td><b>${c.case_id}</b></td>
-                        <td>${c.title}</td>
-                        <td>${c.dispute_type}</td>
-                        <td class="${statusClass}">${c.status}</td>
-                        <td>${c.reporter_name}</td>
-                        <td>${c.submitted_date}</td>
-                        <td>${docs}</td>
-                    </tr>
-                `;
-            });
-            
-            if (bounds.length > 0) {
-                map.fitBounds(bounds, { padding: [50, 50] });
-            }
-        } catch (err) {
-            document.getElementById('casesBody').innerHTML = 
-                '<tr><td colspan="7" style="text-align:center; color:red;">Error loading cases</td></tr>';
-        }
+    function placeMarker(lat, lng) {
+        document.getElementById('latitude').value = lat;
+        document.getElementById('longitude').value = lng;
+        document.getElementById('coordsDisplay').innerText = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+        if (marker) map.removeLayer(marker);
+        marker = L.marker([lat, lng]).addTo(map).bindPopup(` Dispute Location<br>Lat: ${lat.toFixed(6)}<br>Lng: ${lng.toFixed(6)}`).openPopup();
     }
 
-    loadCases();
+    function getCurrentLocation() {
+        if (!navigator.geolocation) { alert("Your browser doesn't support location."); return; }
+        navigator.geolocation.getCurrentPosition(
+            (pos) => placeMarker(pos.coords.latitude, pos.coords.longitude),
+            (err) => alert("Could not get location: " + err.message)
+        );
+    }
+
+    // 3. File Upload Logic
+    let uploadedFiles = [];
+    const fileUploadArea = document.getElementById('fileUploadArea');
+    const fileInput = document.getElementById('fileInput');
+    const filePreview = document.getElementById('filePreview');
+
+    fileUploadArea.addEventListener('click', () => fileInput.click());
+    fileUploadArea.addEventListener('dragover', (e) => { e.preventDefault(); fileUploadArea.classList.add('dragover'); });
+    fileUploadArea.addEventListener('dragleave', () => { fileUploadArea.classList.remove('dragover'); });
+    fileUploadArea.addEventListener('drop', (e) => { e.preventDefault(); fileUploadArea.classList.remove('dragover'); handleFiles(e.dataTransfer.files); });
+    fileInput.addEventListener('change', (e) => { handleFiles(e.target.files); });
+
+    function handleFiles(files) {
+        Array.from(files).forEach(file => {
+            if (file.size > 10 * 1024 * 1024) { alert(`❌ ${file.name} is too large. Maximum size is 10MB.`); return; }
+            uploadedFiles.push(file);
+            displayFilePreview(file, uploadedFiles.length - 1);
+        });
+    }
+
+    function displayFilePreview(file, index) {
+        const fileItem = document.createElement('div');
+        fileItem.className = 'file-item';
+        fileItem.dataset.index = index;
+
+        if (file.type.startsWith('image/')) {
+            const img = document.createElement('img');
+            img.src = URL.createObjectURL(file);
+            fileItem.appendChild(img);
+        } else {
+            const icon = document.createElement('div');
+            icon.className = 'file-item-icon';
+            icon.innerText = file.type.includes('pdf') ? '📄' : '📋';
+            fileItem.appendChild(icon);
+        }
+
+        const name = document.createElement('div');
+        name.className = 'file-item-name';
+        name.innerText = file.name;
+        fileItem.appendChild(name);
+
+        const removeBtn = document.createElement('button');
+        removeBtn.className = 'file-item-remove';
+        removeBtn.innerText = '×';
+        removeBtn.onclick = () => removeFile(index);
+        fileItem.appendChild(removeBtn);
+
+        filePreview.appendChild(fileItem);
+    }
+
+    function removeFile(index) {
+        uploadedFiles.splice(index, 1);
+        refreshFilePreview();
+    }
+
+    function refreshFilePreview() {
+        filePreview.innerHTML = '';
+        uploadedFiles.forEach((file, index) => { displayFilePreview(file, index); });
+    }
+
+    // 4. Form Submission Logic (FIXED)
+    document.getElementById('caseForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const lat = document.getElementById('latitude').value;
+        const lng = document.getElementById('longitude').value;
+        
+        if (!lat || !lng) {
+            alert('⚠️ Please click on the map to set the location first!');
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append('title', document.getElementById('title').value);
+        formData.append('disputeType', document.getElementById('disputeType').value);
+        formData.append('latitude', lat);
+        formData.append('longitude', lng);
+        formData.append('parties', document.getElementById('parties').value);
+        formData.append('description', document.getElementById('description').value);
+        formData.append('reporterName', document.getElementById('reporterName').value);
+        formData.append('contact', document.getElementById('contact').value);
+
+        uploadedFiles.forEach(file => { formData.append('documents', file); });
+
+        const submitBtn = document.getElementById('submitBtn');
+        const originalText = submitBtn.innerText;
+        submitBtn.innerText = '⏳ Submitting...';
+        submitBtn.disabled = true;
+
+        try {
+            // FIX: Use relative URL so it works on both PC and Mobile
+            const response = await fetch('/api/cases', {
+                method: 'POST',
+                body: formData
+            });
+
+            const result = await response.json();
+
+            if (!response.ok) {
+                throw new Error(result.error || `Server error: ${response.status}`);
+            }
+            
+            const msg = document.getElementById('successMsg');
+            msg.style.display = 'block';
+            msg.innerText = `✅ Case ${result.caseId} saved successfully with ${uploadedFiles.length} document(s)!`;
+            
+            // Reset form
+            this.reset();
+            uploadedFiles = [];
+            filePreview.innerHTML = '';
+            document.getElementById('coordsDisplay').innerText = 'Not set yet — click the map!';
+            if (marker) { map.removeLayer(marker); marker = null; }
+            
+            setTimeout(() => msg.style.display = 'none', 5000);
+        } catch (err) {
+            console.error('Submit error:', err);
+            // FIX: Show the exact error from the server
+            alert('❌ Error: ' + err.message);
+        } finally {
+            submitBtn.innerText = originalText;
+            submitBtn.disabled = false;
+        }
+    });
 
     function logout() {
         localStorage.removeItem('userSession');
         window.location.href = 'login.html';
-    }
-
-    if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('/sw.js');
     }
 </script>
 </body>

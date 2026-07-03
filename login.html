@@ -88,32 +88,33 @@
         <div class="form-group">
             <label for="role">Login As</label>
             <select id="role" required>
-                <option value="community">Community Member</option>
-                <option value="mediator">Mediator / Admin</option>
+                <option value="village">Village Officer</option>
+                <option value="ward">Ward Executive Officer</option>
             </select>
         </div>
         <div class="form-group">
             <label for="email">Email Address</label>
-            <input type="email" id="email" placeholder="Enter your email" required>
+            <input type="email" id="email" placeholder="Enter your official email" required>
         </div>
         <div class="form-group">
             <label for="password">Password</label>
-            <input type="password" id="password" placeholder="Enter your password" required>
+            <input type="password" id="password" placeholder="Enter password" required>
         </div>
         <button type="submit">Sign In</button>
     </form>
 
-    <div id="errorMsg" class="message error">Invalid credentials. Please try again.</div>
+    <div id="errorMsg" class="message error">Invalid password. Please try again.</div>
     <div id="successMsg" class="message success">Login Successful! Redirecting...</div>
 
     <div class="demo-info">
-        <strong>Demo Credentials:</strong><br>
-        <b>Community:</b> user@test.com / 1234<br>
-        <b>Mediator:</b> admin@test.com / admin
+        <strong>Login Instructions:</strong><br>
+        <b>Email:</b> Use any valid email address<br>
+        <b>Password:</b> 1234
     </div>
 </div>
 
 <script>
+    // If already logged in, skip login and go straight to dashboard
     if (localStorage.getItem('userSession')) {
         window.location.href = 'land_dispute.html';
     }
@@ -134,19 +135,24 @@
         let isValid = false;
         let userName = "";
         
-        if (role === 'community' && email === 'user@test.com' && password === '1234') {
-            isValid = true; 
-            userName = "Community User";
-        } else if (role === 'mediator' && email === 'admin@test.com' && password === 'admin') {
-            isValid = true; 
-            userName = "Admin / Mediator";
+        // FIX: Accept ANY email, just check the role and a simple universal password
+        if (password === '1234') {
+            isValid = true;
+            if (role === 'village') {
+                userName = "Village Officer";
+            } else if (role === 'ward') {
+                userName = "Ward Executive Officer";
+            }
         }
         
         if (isValid) {
+            // Save session to browser's localStorage
             const userData = { role: role, email: email, name: userName };
             localStorage.setItem('userSession', JSON.stringify(userData));
+            
             successMsg.style.display = 'block';
             
+            // Redirect to the main system page after 1 second
             setTimeout(() => {
                 window.location.href = 'land_dispute.html';
             }, 1000);
@@ -155,6 +161,7 @@
         }
     });
 
+    // Register Service Worker for PWA
     if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('/sw.js')
             .then(() => console.log('✅ Service Worker registered'))
